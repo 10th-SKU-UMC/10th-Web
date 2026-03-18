@@ -22,24 +22,39 @@ const TodoList = () => {
     setTodos((prev) => prev.filter((todo) => todo.id !== id));
   };
 
+  const incompleteTodos = todos.filter((todo) => !todo.complete);
+  const completeTodos = todos.filter((todo) => todo.complete);
+
   return (
-    <div className="flex justify-center items-center bg-gray-50 min-h-screen">
-      <div className="w-120 rounded-lg bg-white shadow-md p-4">
-        <div className="text-center font-bold text-2xl p-4">To Do List</div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="w-120 rounded-lg bg-white p-6 shadow-md">
+        <div className="p-4 text-center text-2xl font-bold">To Do List</div>
         <TodoForm onAdd={addTodo} />
-        <div className="flex flex-row gap-20 justify-evenly text-xl p-4">
-          <p>할 일</p>
-          <p>완료</p>
-        </div>
-        <div className="px-4">
-          {todos.map((todo) => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              onToggle={() => toggleTodo(todo.id)}
-              onDelete={() => deleteTodo(todo.id)}
-            />
-          ))}
+
+        <div className="mt-6 grid grid-cols-2 gap-8 px-4">
+          <div>
+            <p className="mb-4 text-center text-xl font-semibold">할 일</p>
+            {incompleteTodos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onToggle={() => toggleTodo(todo.id)}
+                onDelete={() => deleteTodo(todo.id)}
+              />
+            ))}
+          </div>
+
+          <div>
+            <p className="mb-4 text-center text-xl font-semibold">완료</p>
+            {completeTodos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onToggle={() => toggleTodo(todo.id)}
+                onDelete={() => deleteTodo(todo.id)}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
