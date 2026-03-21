@@ -1,15 +1,13 @@
 import { useState } from "react";
+import { useTodo } from "../context/TodoContext";
 
-interface TodoFormProps {
-  onAdd: (text: string) => void;
-}
-
-const TodoForm = ({ onAdd }: TodoFormProps) => {
+const TodoForm = () => {
   const [value, setValue] = useState("");
+  const { addTodo } = useTodo();
 
   const handleSubmit = () => {
     if (!value.trim()) return;
-    onAdd(value.trim());
+    addTodo(value.trim());
     setValue("");
   };
 
