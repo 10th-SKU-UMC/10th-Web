@@ -1,12 +1,13 @@
-import "./App.css";
+import Navbar from "./components/NavBar";
 import TodoList from "./pages/TodoList";
 
-function App() {
+export default function App() {
   return (
-    <>
-      <TodoList />
-    </>
+    <div className="dark:bg-gray-900 min-h-screen">
+      <Navbar />
+      <div className="pt-14">
+        <TodoList />
+      </div>
+    </div>
   );
 }
-
-export default App;

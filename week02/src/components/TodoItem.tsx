@@ -2,8 +2,8 @@ import type { TodoItemProps } from "../types/Todo";
 
 const TodoItem = ({ todo, onToggle, onDelete }: TodoItemProps) => {
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg mb-2 w-full">
-      <p>{todo.text}</p>
+    <div className="flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-lg mb-2 w-full">
+      <p className="dark:text-white">{todo.text}</p>
       {!todo.complete ? (
         <button
           onClick={onToggle}
