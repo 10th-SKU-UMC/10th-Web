@@ -1,0 +1,21 @@
+{
+  "name": "10th-umc-web",
+  "version": "1.0.0",
+  "description": "> 10th 서경대 **UMC Web 파트 Repository** 입니다.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlwodls/10th-UMC-Web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dlwodls/10th-UMC-Web/issues"
+  },
+  "homepage": "https://github.com/dlwodls/10th-UMC-Web#readme"
+}
