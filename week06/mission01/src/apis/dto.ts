@@ -119,3 +119,28 @@ export interface LikeResponse {
   message: string;
   data: LpLike | null;
 }
+
+export interface Comment {
+  id: number;
+  content: string;
+  authorId: number;
+  lpId: number;
+  createdAt: string;
+  updatedAt: string;
+  author?: LpAuthor;
+}
+
+export interface CommentListResponse {
+  status: boolean;
+  statusCode: number;
+  message: string;
+  data: {
+    data: Comment[];
+    nextCursor: number | null;
+    hasNext: boolean;
+  };
+}
+
+export interface RequestCreateCommentDto {
+  content: string;
+}

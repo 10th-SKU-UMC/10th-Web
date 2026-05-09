@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLpDetail, deleteLp, addLike, removeLike } from "../apis/lp";
 import { useAuth } from "../hooks/useAuth";
+import CommentSection from "../components/CommentSection";
 
 const formatDate = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -184,6 +185,8 @@ export default function LpDetailPage() {
           <span>{lp.likes?.length ?? 0}</span>
         </button>
       </div>
+
+      <CommentSection lpId={id} />
     </div>
   );
 }

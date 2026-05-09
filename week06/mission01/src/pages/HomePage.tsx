@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { getLps } from "../apis/lp";
 import type { SortOrder } from "../apis/dto";
 import LpCard from "../components/LpCard";
@@ -9,15 +9,43 @@ import { LpGridSkeleton } from "../components/LpCardSkeleton";
 export default function HomePage() {
   const navigate = useNavigate();
   const [sort, setSort] = useState<SortOrder>("desc");
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["lps", sort],
-    queryFn: () => getLps(sort),
+    queryFn: ({ pageParam }) => getLps(sort, pageParam as number | undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.data.hasNext ? (lastPage.data.nextCursor ?? undefined) : undefined,
+    initialPageParam: 0,
     staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 10,
   });
 
-  const lps = data?.data?.data ?? [];
+  const lps = data?.pages.flatMap((p) => p.data.data) ?? [];
+
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage]
+  );
+
+  useEffect(() => {
+    const el = bottomRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(handleObserver, { threshold: 0.1 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   return (
     <div className="relative min-h-full p-6">
@@ -64,14 +92,16 @@ export default function HomePage() {
           {isLoading ? (
             <LpGridSkeleton />
           ) : lps.length === 0 ? (
-            <p className="col-span-full py-20 text-center text-gray-500">
-              등록된 LP가 없습니다.
-            </p>
+            <p className="py-20 text-center text-gray-500">등록된 LP가 없습니다.</p>
           ) : (
             lps.map((lp) => <LpCard key={lp.id} lp={lp} />)
           )}
+          {isFetchingNextPage && <LpGridSkeleton count={5} />}
         </div>
       )}
+
+      {/* Infinite scroll trigger */}
+      <div ref={bottomRef} className="h-4" />
 
       {/* Floating + button */}
       <button
