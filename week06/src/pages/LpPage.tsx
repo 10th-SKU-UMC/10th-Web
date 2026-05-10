@@ -81,9 +81,20 @@ export default function LpPage() {
                 alt={lp.title}
                 className="w-full h-48 object-cover transition duration-300 group-hover:blur-sm group-hover:brightness-75"
               />
-              <div className="absolute inset-0 flex items-center justify-center p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <p className="font-bold text-white text-center break-keep">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <p className="font-bold text-white text-center break-keep line-clamp-2">
                   {lp.title}
+                </p>
+                <p className="text-xs text-gray-200">
+                  {new Date(lp.createdAt).toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}
+                </p>
+                <p className="text-xs text-gray-200 flex items-center gap-1">
+                  <span aria-hidden>♥</span>
+                  <span>{lp.likes.length}</span>
                 </p>
               </div>
             </div>
