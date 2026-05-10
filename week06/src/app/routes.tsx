@@ -12,6 +12,7 @@ import ProtectedLayout from "../layout/ProtectedLayout";
 import MyPage from "../pages/MyPage";
 import GoogleLoginRedirectPage from "../pages/GoogleLoginRedirectPage";
 import LpPage from "../pages/LpPage";
+import LpDetailPage from "../pages/LpDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <MoviePage category="popular" /> },
       { path: "lp", element: <LpPage /> },
+      { path: "lp/:lpid", element: <LpDetailPage /> },
       { path: "popular", element: <PopularPage /> },
       { path: "upcoming", element: <UpcomingPage /> },
       { path: "top-rated", element: <TopRatedPage /> },

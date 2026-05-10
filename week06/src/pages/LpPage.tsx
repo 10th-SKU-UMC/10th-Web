@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import PlusButton from "../components/PlusButton";
+import LpCardSkeleton from "../components/LpCardSkeleton";
+import ErrorState from "../components/ErrorState";
 import { getLpList } from "../api/lp";
 import type { ResponseLpListDto } from "../types/lp";
 import { PAGINATION_ORDER } from "../enums/common";
 
-const SKELETON_COUNT = 10;
-
 export default function LpPage() {
+  const navigate = useNavigate();
   const [sort, setSort] = useState<PAGINATION_ORDER>(PAGINATION_ORDER.desc);
 
   const {
@@ -46,34 +48,18 @@ export default function LpPage() {
       </div>
 
       {isPending ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-xl overflow-hidden shadow-lg bg-gray-800 animate-pulse"
-            >
-              <div className="w-full h-48 bg-gray-700" />
-              <div className="p-3">
-                <div className="h-4 w-3/4 bg-gray-700 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <LpCardSkeleton />
       ) : isError ? (
-        <div className="flex flex-col items-center justify-center gap-4 p-10">
-          <p className="text-red-500">LP 목록을 불러오는 데 실패했습니다.</p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition-colors"
-          >
-            다시 시도
-          </button>
-        </div>
+        <ErrorState
+          message="LP 목록을 불러오는 데 실패했습니다."
+          onRetry={() => refetch()}
+        />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {lpList?.data.data.map((lp) => (
             <div
               key={lp.id}
+              onClick={() => navigate(`/lp/${lp.id}`)}
               className="group relative rounded-xl overflow-hidden shadow-lg bg-gray-800 cursor-pointer transition-transform duration-300 hover:scale-105"
             >
               <img
