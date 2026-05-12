@@ -1,0 +1,19 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0d0d0d;
+}
+
+.glow-btn {
+  outline: 1.5px solid transparent;
+  transition: outline 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glow-btn:hover {
+  outline: 1.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+}
