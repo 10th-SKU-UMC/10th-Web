@@ -72,13 +72,6 @@ export default function SearchModal({ onClose }: Props) {
 
   const results = data?.pages.flatMap((p) => p.data.data) ?? [];
 
-  /* 검색어 저장 — debouncedQuery가 확정됐을 때 */
-  useEffect(() => {
-    if (trimmed.length > 0) {
-      saveRecentSearch(trimmed);
-      setRecentSearches(getRecentSearches());
-    }
-  }, [trimmed]);
 
   /* 무한 스크롤 — IntersectionObserver */
   useEffect(() => {
@@ -103,6 +96,10 @@ export default function SearchModal({ onClose }: Props) {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.nativeEvent.isComposing) return;
     if (e.key === "Escape") onClose();
+    if (e.key === "Enter" && query.trim().length > 0) {
+      saveRecentSearch(query.trim());
+      setRecentSearches(getRecentSearches());
+    }
   };
 
   const handleRecentClick = (term: string) => {
@@ -227,7 +224,17 @@ export default function SearchModal({ onClose }: Props) {
               ) : (
                 <div className="columns-2 gap-3">
                   {results.map((lp) => (
-                    <div key={lp.id} className="mb-3 break-inside-avoid" onClick={onClose}>
+                    <div
+                      key={lp.id}
+                      className="mb-3 break-inside-avoid"
+                      onClick={() => {
+                        if (trimmed.length > 0) {
+                          saveRecentSearch(trimmed);
+                          setRecentSearches(getRecentSearches());
+                        }
+                        onClose();
+                      }}
+                    >
                       <LpCard lp={lp} />
                     </div>
                   ))}
