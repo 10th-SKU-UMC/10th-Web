@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getLps } from "../apis/lp";
 import type { SortOrder } from "../apis/dto";
 import LpCard from "../components/LpCard";
 import { LpGridSkeleton } from "../components/LpCardSkeleton";
 import LpCreateModal from "../components/LpCreateModal";
+import { useThrottle } from "../hooks/useThrottle";
 
 export default function HomePage() {
   const [sort, setSort] = useState<SortOrder>("desc");
@@ -30,22 +31,25 @@ export default function HomePage() {
 
   const lps = data?.pages.flatMap((p) => p.data.data) ?? [];
 
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage]
-  );
+  const [isAtBottom, setIsAtBottom] = useState(false);
+  const throttledIsAtBottom = useThrottle(isAtBottom, 1000);
 
   useEffect(() => {
     const el = bottomRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(handleObserver, { threshold: 0.1 });
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsAtBottom(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [handleObserver]);
+  }, []);
+
+  useEffect(() => {
+    if (throttledIsAtBottom && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [throttledIsAtBottom, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="relative min-h-full p-6">
