@@ -1,9 +1,10 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { getMyInfo, updateMyInfo } from "../apis/user";
-import { getMyLps, updateLp, deleteLp } from "../apis/lp";
+import { getMyLps, deleteLp } from "../apis/lp";
 import { uploadImage } from "../apis/upload";
 import type { Lp } from "../apis/dto";
+import LpEditModal from "../components/LpEditModal";
 
 const DefaultAvatar = () => (
   <svg viewBox="0 0 100 100" className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
@@ -13,110 +14,37 @@ const DefaultAvatar = () => (
   </svg>
 );
 
-/* ── LP 카드 (인라인 수정) ─────────────────────────── */
-function MyLpCard({ lp, onDeleted }: { lp: Lp; onDeleted: () => void }) {
-  const queryClient = useQueryClient();
-  const imgInputRef = useRef<HTMLInputElement>(null);
-  const [editing, setEditing] = useState(false);
-  const [titleInput, setTitleInput] = useState(lp.title);
-  const [imgFile, setImgFile] = useState<File | null>(null);
-  const [imgPreview, setImgPreview] = useState<string | null>(null);
-
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      let thumbnail: string | undefined;
-      if (imgFile) thumbnail = await uploadImage(imgFile);
-      return updateLp(lp.id, {
-        title: titleInput.trim() || lp.title,
-        thumbnail,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myLps"] });
-      setEditing(false);
-      setImgFile(null);
-      setImgPreview(null);
-    },
-  });
-
+/* ── LP 카드 ──────────────────────────────────────── */
+function MyLpCard({ lp, onDeleted, onEdit }: { lp: Lp; onDeleted: () => void; onEdit: () => void }) {
   const deleteMutation = useMutation({
     mutationFn: () => deleteLp(lp.id),
     onSuccess: onDeleted,
   });
 
-  const handleImgChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImgFile(file);
-    setImgPreview(URL.createObjectURL(file));
-  };
-
-  const thumbnail = imgPreview ?? lp.thumbnail;
-
   return (
     <div className="flex items-center gap-4 rounded-xl bg-[#1a1a1a] p-3">
       {/* 썸네일 */}
-      <div
-        className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800 ${editing ? "cursor-pointer" : ""}`}
-        onClick={() => editing && imgInputRef.current?.click()}
-      >
-        {thumbnail ? (
-          <img src={thumbnail} alt={lp.title} className="h-full w-full object-cover" />
+      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800">
+        {lp.thumbnail ? (
+          <img src={lp.thumbnail} alt={lp.title} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-gray-600 text-xs">No img</div>
         )}
       </div>
-      <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImgChange} />
 
       {/* 제목 */}
-      <div className="flex-1 min-w-0">
-        {editing ? (
-          <input
-            type="text"
-            value={titleInput}
-            onChange={(e) => setTitleInput(e.target.value)}
-            autoFocus
-            className="w-full rounded-md border border-gray-600 bg-black px-3 py-1.5 text-sm text-white outline-none focus:border-pink-500"
-          />
-        ) : (
-          <p className="truncate text-sm font-medium text-white">{lp.title}</p>
-        )}
-      </div>
+      <p className="flex-1 min-w-0 truncate text-sm font-medium text-white">{lp.title}</p>
 
       {/* 버튼 */}
       <div className="flex shrink-0 items-center gap-2">
-        {editing ? (
-          <>
-            {/* 이미지 변경 */}
-            <button
-              type="button"
-              onClick={() => imgInputRef.current?.click()}
-              className="text-gray-400 transition hover:text-white"
-              aria-label="이미지 변경"
-            >
-              🖼️
-            </button>
-            {/* 저장 */}
-            <button
-              type="button"
-              onClick={() => updateMutation.mutate()}
-              disabled={updateMutation.isPending}
-              className="text-gray-300 transition hover:text-white disabled:opacity-50"
-              aria-label="저장"
-            >
-              ✓
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => { setTitleInput(lp.title); setEditing(true); }}
-            className="text-gray-400 transition hover:text-white"
-            aria-label="수정"
-          >
-            ✏️
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-gray-400 transition hover:text-white"
+          aria-label="수정"
+        >
+          ✏️
+        </button>
         <button
           type="button"
           onClick={() => deleteMutation.mutate()}
@@ -140,6 +68,7 @@ export default function MyPage() {
   const [bioInput, setBioInput] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [editingLp, setEditingLp] = useState<Lp | null>(null);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["myInfo"],
@@ -286,9 +215,20 @@ export default function MyPage() {
               key={lp.id}
               lp={lp}
               onDeleted={() => queryClient.invalidateQueries({ queryKey: ["myLps"] })}
+              onEdit={() => setEditingLp(lp)}
             />
           ))}
         </div>
+      )}
+
+      {editingLp && (
+        <LpEditModal
+          lp={editingLp}
+          onClose={() => {
+            setEditingLp(null);
+            queryClient.invalidateQueries({ queryKey: ["myLps"] });
+          }}
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLpDetail, deleteLp, addLike, removeLike } from "../apis/lp";
 import { useAuth } from "../hooks/useAuth";
 import CommentSection from "../components/CommentSection";
+import LpEditModal from "../components/LpEditModal";
 
 const formatDate = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -57,6 +58,7 @@ export default function LpDetailPage() {
   });
 
   const [thumbError, setThumbError] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const lp = data?.data;
   const isLiked = userId != null && (lp?.likes ?? []).some((l) => l.userId === userId);
@@ -109,7 +111,7 @@ export default function LpDetailPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => navigate(`/lps/${id}/edit`)}
+              onClick={() => setEditModalOpen(true)}
               className="text-gray-400 transition hover:text-white"
               aria-label="수정"
             >
@@ -187,6 +189,10 @@ export default function LpDetailPage() {
       </div>
 
       <CommentSection lpId={id} />
+
+      {editModalOpen && lp && (
+        <LpEditModal lp={lp} onClose={() => setEditModalOpen(false)} />
+      )}
     </div>
   );
 }
