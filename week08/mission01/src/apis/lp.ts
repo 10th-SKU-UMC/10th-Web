@@ -31,21 +31,26 @@ export const getLps = async (order: SortOrder = "desc", cursor?: number): Promis
   return data;
 };
 
-export type SearchType = "title" | "content" | "tag";
+export type SearchType = "title" | "tag";
 
 export const searchLps = async (
   search: string,
-  searchType: SearchType = "title",
   order: SortOrder = "desc",
   cursor?: number
 ): Promise<LpListResponse> => {
   const { data } = await axiosInstance.get("/v1/lps", {
-    params: {
-      search,
-      searchType,
-      order,
-      ...(cursor !== undefined && cursor > 0 ? { cursor } : {}),
-    },
+    params: { search, order, ...(cursor !== undefined && cursor > 0 ? { cursor } : {}) },
+  });
+  return data;
+};
+
+export const searchLpsByTag = async (
+  tagName: string,
+  order: SortOrder = "desc",
+  cursor?: number
+): Promise<LpListResponse> => {
+  const { data } = await axiosInstance.get(`/v1/lps/tag/${encodeURIComponent(tagName)}`, {
+    params: { order, ...(cursor !== undefined && cursor > 0 ? { cursor } : {}) },
   });
   return data;
 };

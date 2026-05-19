@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ChangeEvent, type KeyboardEvent } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { searchLps, type SearchType } from "../apis/lp";
+import { searchLps, searchLpsByTag, type SearchType } from "../apis/lp";
 import { useDebounce } from "../hooks/useDebounce";
 import LpCard from "./LpCard";
 
@@ -9,7 +9,6 @@ const MAX_RECENT = 8;
 
 const SEARCH_TYPES: { value: SearchType; label: string }[] = [
   { value: "title", label: "제목" },
-  { value: "content", label: "내용" },
   { value: "tag", label: "태그" },
 ];
 
@@ -60,7 +59,9 @@ export default function SearchModal({ onClose }: Props) {
   } = useInfiniteQuery({
     queryKey: ["search", trimmed, searchType],
     queryFn: ({ pageParam }) =>
-      searchLps(trimmed, searchType, "desc", pageParam as number | undefined),
+      searchType === "tag"
+        ? searchLpsByTag(trimmed, "desc", pageParam as number | undefined)
+        : searchLps(trimmed, "desc", pageParam as number | undefined),
     getNextPageParam: (last) =>
       last.data.hasNext ? (last.data.nextCursor ?? undefined) : undefined,
     initialPageParam: 0,
