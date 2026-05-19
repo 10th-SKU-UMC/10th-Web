@@ -1,7 +1,9 @@
-import { useState, useRef, type ChangeEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState, type ChangeEvent } from "react";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { getMyInfo, updateMyInfo } from "../apis/user";
+import { getMyLps, updateLp, deleteLp } from "../apis/lp";
 import { uploadImage } from "../apis/upload";
+import type { Lp } from "../apis/dto";
 
 const DefaultAvatar = () => (
   <svg viewBox="0 0 100 100" className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
@@ -11,6 +13,125 @@ const DefaultAvatar = () => (
   </svg>
 );
 
+/* ── LP 카드 (인라인 수정) ─────────────────────────── */
+function MyLpCard({ lp, onDeleted }: { lp: Lp; onDeleted: () => void }) {
+  const queryClient = useQueryClient();
+  const imgInputRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [titleInput, setTitleInput] = useState(lp.title);
+  const [imgFile, setImgFile] = useState<File | null>(null);
+  const [imgPreview, setImgPreview] = useState<string | null>(null);
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      let thumbnail: string | undefined;
+      if (imgFile) thumbnail = await uploadImage(imgFile);
+      return updateLp(lp.id, {
+        title: titleInput.trim() || lp.title,
+        thumbnail,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLps"] });
+      setEditing(false);
+      setImgFile(null);
+      setImgPreview(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteLp(lp.id),
+    onSuccess: onDeleted,
+  });
+
+  const handleImgChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImgFile(file);
+    setImgPreview(URL.createObjectURL(file));
+  };
+
+  const thumbnail = imgPreview ?? lp.thumbnail;
+
+  return (
+    <div className="flex items-center gap-4 rounded-xl bg-[#1a1a1a] p-3">
+      {/* 썸네일 */}
+      <div
+        className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800 ${editing ? "cursor-pointer" : ""}`}
+        onClick={() => editing && imgInputRef.current?.click()}
+      >
+        {thumbnail ? (
+          <img src={thumbnail} alt={lp.title} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-gray-600 text-xs">No img</div>
+        )}
+      </div>
+      <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImgChange} />
+
+      {/* 제목 */}
+      <div className="flex-1 min-w-0">
+        {editing ? (
+          <input
+            type="text"
+            value={titleInput}
+            onChange={(e) => setTitleInput(e.target.value)}
+            autoFocus
+            className="w-full rounded-md border border-gray-600 bg-black px-3 py-1.5 text-sm text-white outline-none focus:border-pink-500"
+          />
+        ) : (
+          <p className="truncate text-sm font-medium text-white">{lp.title}</p>
+        )}
+      </div>
+
+      {/* 버튼 */}
+      <div className="flex shrink-0 items-center gap-2">
+        {editing ? (
+          <>
+            {/* 이미지 변경 */}
+            <button
+              type="button"
+              onClick={() => imgInputRef.current?.click()}
+              className="text-gray-400 transition hover:text-white"
+              aria-label="이미지 변경"
+            >
+              🖼️
+            </button>
+            {/* 저장 */}
+            <button
+              type="button"
+              onClick={() => updateMutation.mutate()}
+              disabled={updateMutation.isPending}
+              className="text-gray-300 transition hover:text-white disabled:opacity-50"
+              aria-label="저장"
+            >
+              ✓
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setTitleInput(lp.title); setEditing(true); }}
+            className="text-gray-400 transition hover:text-white"
+            aria-label="수정"
+          >
+            ✏️
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => deleteMutation.mutate()}
+          disabled={deleteMutation.isPending}
+          className="text-gray-400 transition hover:text-red-400 disabled:opacity-50"
+          aria-label="삭제"
+        >
+          🗑️
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── MyPage ───────────────────────────────────────── */
 export default function MyPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -20,17 +141,24 @@ export default function MyPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["myInfo"],
     queryFn: getMyInfo,
   });
 
-  const mutation = useMutation({
+  const { data: lpData, isLoading: lpsLoading } = useInfiniteQuery({
+    queryKey: ["myLps"],
+    queryFn: ({ pageParam }) => getMyLps("desc", pageParam as number | undefined),
+    getNextPageParam: (last) => last.data.hasNext ? (last.data.nextCursor ?? undefined) : undefined,
+    initialPageParam: 0,
+  });
+
+  const myLps = lpData?.pages.flatMap((p) => p.data.data) ?? [];
+
+  const profileMutation = useMutation({
     mutationFn: async () => {
       let avatarUrl: string | undefined;
-      if (avatarFile) {
-        avatarUrl = await uploadImage(avatarFile);
-      }
+      if (avatarFile) avatarUrl = await uploadImage(avatarFile);
       return updateMyInfo({
         name: nameInput || undefined,
         bio: bioInput || undefined,
@@ -43,9 +171,7 @@ export default function MyPage() {
       setAvatarFile(null);
       setAvatarPreview(null);
     },
-    onError: () => {
-      alert("프로필 수정에 실패했습니다.");
-    },
+    onError: () => alert("프로필 수정에 실패했습니다."),
   });
 
   const handleEditStart = () => {
@@ -57,50 +183,38 @@ export default function MyPage() {
     setIsEditing(true);
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   };
 
-  const handleSave = () => {
-    if (!nameInput.trim()) { alert("이름을 입력해주세요."); return; }
-    mutation.mutate();
-  };
-
-  if (isLoading) {
+  if (userLoading) {
     return (
       <div className="flex min-h-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
       </div>
     );
   }
-
   if (!user) return null;
 
   const displayAvatar = avatarPreview ?? user.avatar;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
-      {/* Header */}
+      {/* 헤더 */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">마이페이지</h1>
         {!isEditing && (
-          <button
-            type="button"
-            onClick={handleEditStart}
-            className="text-gray-400 transition hover:text-white"
-            aria-label="설정"
-          >
+          <button type="button" onClick={handleEditStart} className="text-gray-400 transition hover:text-white" aria-label="설정">
             ⚙️
           </button>
         )}
       </div>
 
-      {/* Profile card */}
-      <div className="flex items-center gap-8 rounded-xl bg-[#111] p-8">
-        {/* Avatar */}
+      {/* 프로필 카드 */}
+      <div className="mb-8 flex items-center gap-8 rounded-xl bg-[#111] p-8">
         <div
           className={`relative h-32 w-32 shrink-0 overflow-hidden rounded-full ${isEditing ? "cursor-pointer" : ""}`}
           onClick={() => isEditing && fileInputRef.current?.click()}
@@ -111,24 +225,14 @@ export default function MyPage() {
             <DefaultAvatar />
           )}
           {isEditing && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
-              변경
-            </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">변경</div>
           )}
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
 
-        {/* Info */}
         <div className="flex flex-1 flex-col gap-3">
           {isEditing ? (
             <>
-              {/* 이름 */}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -138,16 +242,13 @@ export default function MyPage() {
                 />
                 <button
                   type="button"
-                  onClick={handleSave}
-                  disabled={mutation.isPending}
+                  onClick={() => { if (!nameInput.trim()) { alert("이름을 입력해주세요."); return; } profileMutation.mutate(); }}
+                  disabled={profileMutation.isPending}
                   className="text-lg text-gray-300 transition hover:text-white disabled:opacity-50"
-                  aria-label="저장"
                 >
                   ✓
                 </button>
               </div>
-
-              {/* Bio */}
               <input
                 type="text"
                 value={bioInput}
@@ -155,17 +256,8 @@ export default function MyPage() {
                 placeholder="자기소개 (선택)"
                 className="rounded-lg border border-gray-600 bg-black px-4 py-2.5 text-white outline-none placeholder:text-gray-500 focus:border-pink-500"
               />
-
-              {/* 이메일 */}
               <p className="text-sm text-gray-400">{user.email}</p>
-
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="self-start text-xs text-gray-500 transition hover:text-gray-300"
-              >
-                취소
-              </button>
+              <button type="button" onClick={() => setIsEditing(false)} className="self-start text-xs text-gray-500 transition hover:text-gray-300">취소</button>
             </>
           ) : (
             <>
@@ -176,6 +268,28 @@ export default function MyPage() {
           )}
         </div>
       </div>
+
+      {/* 내 LP 목록 */}
+      <h2 className="mb-4 text-lg font-semibold text-white">내 LP</h2>
+      {lpsLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-800" />
+          ))}
+        </div>
+      ) : myLps.length === 0 ? (
+        <p className="py-10 text-center text-sm text-gray-500">아직 등록한 LP가 없습니다.</p>
+      ) : (
+        <div className="space-y-3">
+          {myLps.map((lp) => (
+            <MyLpCard
+              key={lp.id}
+              lp={lp}
+              onDeleted={() => queryClient.invalidateQueries({ queryKey: ["myLps"] })}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
