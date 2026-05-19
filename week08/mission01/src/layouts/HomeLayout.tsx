@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
+import { useSidebar } from "../hooks/useSidebar";
 import ConfirmModal from "../components/ConfirmModal";
 import SearchModal from "../components/SearchModal";
 import hamburgerImg from "../assets/hamburger-button.svg";
@@ -9,10 +10,9 @@ import hamburgerImg from "../assets/hamburger-button.svg";
 const HomeLayout = () => {
   const navigate = useNavigate();
   const { accessToken, name, logout, deleteAccount } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isOpen: sidebarOpen, close: closeSidebar, toggle: toggleSidebar } = useSidebar();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -30,24 +30,13 @@ const HomeLayout = () => {
     },
   });
 
-  /* 사이드바 외부 클릭 시 닫기 */
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (sidebarOpen && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        setSidebarOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [sidebarOpen]);
-
   return (
     <div className="flex h-screen flex-col bg-black text-white">
       {/* ── 헤더 ── */}
       <header className="flex h-[60px] shrink-0 items-center border-b border-gray-800 px-4 gap-4">
         <button
           type="button"
-          onClick={() => setSidebarOpen((prev) => !prev)}
+          onClick={toggleSidebar}
           className="transition hover:opacity-70"
           aria-label="메뉴"
         >
@@ -101,13 +90,12 @@ const HomeLayout = () => {
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-20 bg-black/50"
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
           />
         )}
 
         {/* ── 사이드바 ── */}
         <aside
-          ref={sidebarRef}
           className={`
             fixed top-[60px] left-0 z-30 flex h-[calc(100vh-60px)] w-[160px] flex-col
             border-r border-gray-800 bg-black transition-transform duration-300
@@ -117,7 +105,7 @@ const HomeLayout = () => {
           <nav className="flex flex-1 flex-col gap-1 p-4 pt-6">
             <button
               type="button"
-              onClick={() => { setSearchOpen(true); setSidebarOpen(false); }}
+              onClick={() => { setSearchOpen(true); closeSidebar(); }}
               className="flex items-center gap-2 rounded px-3 py-2 text-sm text-gray-300 transition hover:bg-gray-800 hover:text-white"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -129,7 +117,7 @@ const HomeLayout = () => {
 
             <button
               type="button"
-              onClick={() => { navigate("/mypage"); setSidebarOpen(false); }}
+              onClick={() => { navigate("/mypage"); closeSidebar(); }}
               className="flex items-center gap-2 rounded px-3 py-2 text-sm text-gray-300 transition hover:bg-gray-800 hover:text-white"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,7 +132,7 @@ const HomeLayout = () => {
             {accessToken && (
               <button
                 type="button"
-                onClick={() => { setSidebarOpen(false); setShowDeleteModal(true); }}
+                onClick={() => { closeSidebar(); setShowDeleteModal(true); }}
                 className="w-full rounded px-3 py-2 text-left text-sm text-gray-500 transition hover:text-red-400"
               >
                 탈퇴하기
