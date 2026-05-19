@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "../components/ConfirmModal";
+import SearchModal from "../components/SearchModal";
 import hamburgerImg from "../assets/hamburger-button.svg";
 
 const HomeLayout = () => {
@@ -10,6 +11,7 @@ const HomeLayout = () => {
   const { accessToken, name, logout, deleteAccount } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   const logoutMutation = useMutation({
@@ -115,7 +117,7 @@ const HomeLayout = () => {
           <nav className="flex flex-1 flex-col gap-1 p-4 pt-6">
             <button
               type="button"
-              onClick={() => { navigate("/"); setSidebarOpen(false); }}
+              onClick={() => { setSearchOpen(true); setSidebarOpen(false); }}
               className="flex items-center gap-2 rounded px-3 py-2 text-sm text-gray-300 transition hover:bg-gray-800 hover:text-white"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -156,6 +158,8 @@ const HomeLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
 
       {showDeleteModal && (
         <ConfirmModal

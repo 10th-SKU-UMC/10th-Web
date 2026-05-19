@@ -31,6 +31,25 @@ export const getLps = async (order: SortOrder = "desc", cursor?: number): Promis
   return data;
 };
 
+export type SearchType = "title" | "content" | "tag";
+
+export const searchLps = async (
+  search: string,
+  searchType: SearchType = "title",
+  order: SortOrder = "desc",
+  cursor?: number
+): Promise<LpListResponse> => {
+  const { data } = await axiosInstance.get("/v1/lps", {
+    params: {
+      search,
+      searchType,
+      order,
+      ...(cursor !== undefined && cursor > 0 ? { cursor } : {}),
+    },
+  });
+  return data;
+};
+
 export const getLpDetail = async (lpid: number): Promise<LpDetailResponse> => {
   const { data } = await axiosInstance.get(`/v1/lps/${lpid}`);
   return data;
