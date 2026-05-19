@@ -1,10 +1,15 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
-import { getMyInfo, updateMyInfo } from "../apis/user";
-import { getMyLps, deleteLp } from "../apis/lp";
+import { useNavigate } from "react-router-dom";
+import { getMyInfo, updateMyInfo, type UserProfile } from "../apis/user";
+import { getMyLps, getLikedLps, deleteLp } from "../apis/lp";
 import { uploadImage } from "../apis/upload";
 import type { Lp } from "../apis/dto";
+import { useAuth } from "../hooks/useAuth";
 import LpEditModal from "../components/LpEditModal";
+
+type Tab = "liked" | "authored";
+type SortOrder = "asc" | "desc";
 
 const DefaultAvatar = () => (
   <svg viewBox="0 0 100 100" className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
@@ -14,7 +19,7 @@ const DefaultAvatar = () => (
   </svg>
 );
 
-/* ── LP 카드 ──────────────────────────────────────── */
+/* ── LP 카드 (내가 작성한 LP 탭) ──────────────────── */
 function MyLpCard({ lp, onDeleted, onEdit }: { lp: Lp; onDeleted: () => void; onEdit: () => void }) {
   const deleteMutation = useMutation({
     mutationFn: () => deleteLp(lp.id),
@@ -23,7 +28,6 @@ function MyLpCard({ lp, onDeleted, onEdit }: { lp: Lp; onDeleted: () => void; on
 
   return (
     <div className="flex items-center gap-4 rounded-xl bg-[#1a1a1a] p-3">
-      {/* 썸네일 */}
       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800">
         {lp.thumbnail ? (
           <img src={lp.thumbnail} alt={lp.title} className="h-full w-full object-cover" />
@@ -31,58 +35,78 @@ function MyLpCard({ lp, onDeleted, onEdit }: { lp: Lp; onDeleted: () => void; on
           <div className="flex h-full w-full items-center justify-center text-gray-600 text-xs">No img</div>
         )}
       </div>
-
-      {/* 제목 */}
       <p className="flex-1 min-w-0 truncate text-sm font-medium text-white">{lp.title}</p>
-
-      {/* 버튼 */}
       <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onEdit}
-          className="text-gray-400 transition hover:text-white"
-          aria-label="수정"
-        >
-          ✏️
-        </button>
+        <button type="button" onClick={onEdit} className="text-gray-400 transition hover:text-white" aria-label="수정">✏️</button>
         <button
           type="button"
           onClick={() => deleteMutation.mutate()}
           disabled={deleteMutation.isPending}
           className="text-gray-400 transition hover:text-red-400 disabled:opacity-50"
           aria-label="삭제"
-        >
-          🗑️
-        </button>
+        >🗑️</button>
       </div>
     </div>
+  );
+}
+
+/* ── LP 썸네일 카드 (내가 좋아요 한 LP 탭) ────────── */
+function LikedLpCard({ lp }: { lp: Lp }) {
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      onClick={() => navigate(`/lps/${lp.id}`)}
+      className="group relative w-full overflow-hidden rounded-xl bg-gray-800"
+    >
+      {lp.thumbnail ? (
+        <img src={lp.thumbnail} alt={lp.title} className="w-full object-cover aspect-square" />
+      ) : (
+        <div className="flex aspect-square w-full items-center justify-center bg-gray-800 text-gray-600 text-xs">No img</div>
+      )}
+      <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
+        <p className="line-clamp-2 text-xs font-medium text-white">{lp.title}</p>
+      </div>
+    </button>
   );
 }
 
 /* ── MyPage ───────────────────────────────────────── */
 export default function MyPage() {
   const queryClient = useQueryClient();
+  const { updateName } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [bioInput, setBioInput] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [editingLp, setEditingLp] = useState<Lp | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("liked");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["myInfo"],
     queryFn: getMyInfo,
   });
 
-  const { data: lpData, isLoading: lpsLoading } = useInfiniteQuery({
-    queryKey: ["myLps"],
-    queryFn: ({ pageParam }) => getMyLps("desc", pageParam as number | undefined),
+  const { data: authoredData, isLoading: authoredLoading } = useInfiniteQuery({
+    queryKey: ["myLps", sortOrder],
+    queryFn: ({ pageParam }) => getMyLps(sortOrder, pageParam as number | undefined),
     getNextPageParam: (last) => last.data.hasNext ? (last.data.nextCursor ?? undefined) : undefined,
     initialPageParam: 0,
   });
 
-  const myLps = lpData?.pages.flatMap((p) => p.data.data) ?? [];
+  const { data: likedData, isLoading: likedLoading } = useInfiniteQuery({
+    queryKey: ["likedLps", sortOrder],
+    queryFn: ({ pageParam }) => getLikedLps(sortOrder, pageParam as number | undefined),
+    getNextPageParam: (last) => last.data.hasNext ? (last.data.nextCursor ?? undefined) : undefined,
+    initialPageParam: 0,
+  });
+
+  const myLps = authoredData?.pages.flatMap((p) => p.data.data) ?? [];
+  const likedLps = likedData?.pages.flatMap((p) => p.data.data) ?? [];
 
   const profileMutation = useMutation({
     mutationFn: async () => {
@@ -94,13 +118,29 @@ export default function MyPage() {
         avatar: avatarUrl,
       });
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["myInfo"] });
+      const previousUser = queryClient.getQueryData<UserProfile>(["myInfo"]);
+      queryClient.setQueryData<UserProfile>(["myInfo"], (old) =>
+        old ? { ...old, name: nameInput, bio: bioInput } : old
+      );
+      updateName(nameInput);
+      return { previousUser };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousUser) {
+        queryClient.setQueryData(["myInfo"], context.previousUser);
+      }
+      alert("프로필 수정에 실패했습니다.");
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["myInfo"] });
+      queryClient.invalidateQueries({ queryKey: ["lp"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["lps"], refetchType: "all" });
       setIsEditing(false);
       setAvatarFile(null);
       setAvatarPreview(null);
     },
-    onError: () => alert("프로필 수정에 실패했습니다."),
   });
 
   const handleEditStart = () => {
@@ -129,6 +169,7 @@ export default function MyPage() {
   if (!user) return null;
 
   const displayAvatar = avatarPreview ?? user.avatar;
+  const isLpsLoading = activeTab === "authored" ? authoredLoading : likedLoading;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
@@ -143,7 +184,7 @@ export default function MyPage() {
       </div>
 
       {/* 프로필 카드 */}
-      <div className="mb-8 flex items-center gap-8 rounded-xl bg-[#111] p-8">
+      <div className="mb-6 flex items-center gap-8 rounded-xl bg-[#111] p-8">
         <div
           className={`relative h-32 w-32 shrink-0 overflow-hidden rounded-full ${isEditing ? "cursor-pointer" : ""}`}
           onClick={() => isEditing && fileInputRef.current?.click()}
@@ -167,6 +208,10 @@ export default function MyPage() {
                   type="text"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.nativeEvent.isComposing) return;
+                    if (e.key === "Enter") { if (!nameInput.trim()) { alert("이름을 입력해주세요."); return; } profileMutation.mutate(); }
+                  }}
                   className="flex-1 rounded-lg border border-gray-600 bg-black px-4 py-2.5 text-white outline-none focus:border-pink-500"
                 />
                 <button
@@ -198,27 +243,88 @@ export default function MyPage() {
         </div>
       </div>
 
-      {/* 내 LP 목록 */}
-      <h2 className="mb-4 text-lg font-semibold text-white">내 LP</h2>
-      {lpsLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-800" />
+      {/* 탭 + 정렬 */}
+      <div className="mb-4 flex items-center justify-between border-b border-gray-800">
+        <div className="flex">
+          <button
+            type="button"
+            onClick={() => setActiveTab("liked")}
+            className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${
+              activeTab === "liked"
+                ? "border-white text-white"
+                : "border-transparent text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            내가 좋아요 한 LP
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("authored")}
+            className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${
+              activeTab === "authored"
+                ? "border-white text-white"
+                : "border-transparent text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            내가 작성한 LP
+          </button>
+        </div>
+        <div className="flex gap-1 pb-2">
+          <button
+            type="button"
+            onClick={() => setSortOrder("asc")}
+            className={`rounded px-3 py-1 text-xs transition ${
+              sortOrder === "asc"
+                ? "bg-white text-black font-semibold"
+                : "border border-gray-600 text-gray-400 hover:text-white"
+            }`}
+          >
+            오래된순
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortOrder("desc")}
+            className={`rounded px-3 py-1 text-xs transition ${
+              sortOrder === "desc"
+                ? "bg-white text-black font-semibold"
+                : "border border-gray-600 text-gray-400 hover:text-white"
+            }`}
+          >
+            최신순
+          </button>
+        </div>
+      </div>
+
+      {/* LP 목록 */}
+      {isLpsLoading ? (
+        <div className={activeTab === "liked" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={`animate-pulse rounded-xl bg-gray-800 ${activeTab === "liked" ? "aspect-square" : "h-20"}`} />
           ))}
         </div>
-      ) : myLps.length === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-500">아직 등록한 LP가 없습니다.</p>
+      ) : activeTab === "liked" ? (
+        likedLps.length === 0 ? (
+          <p className="py-10 text-center text-sm text-gray-500">좋아요 한 LP가 없습니다.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {likedLps.map((lp) => <LikedLpCard key={lp.id} lp={lp} />)}
+          </div>
+        )
       ) : (
-        <div className="space-y-3">
-          {myLps.map((lp) => (
-            <MyLpCard
-              key={lp.id}
-              lp={lp}
-              onDeleted={() => queryClient.invalidateQueries({ queryKey: ["myLps"] })}
-              onEdit={() => setEditingLp(lp)}
-            />
-          ))}
-        </div>
+        myLps.length === 0 ? (
+          <p className="py-10 text-center text-sm text-gray-500">아직 등록한 LP가 없습니다.</p>
+        ) : (
+          <div className="space-y-3">
+            {myLps.map((lp) => (
+              <MyLpCard
+                key={lp.id}
+                lp={lp}
+                onDeleted={() => queryClient.invalidateQueries({ queryKey: ["myLps", sortOrder] })}
+                onEdit={() => setEditingLp(lp)}
+              />
+            ))}
+          </div>
+        )
       )}
 
       {editingLp && (
@@ -226,7 +332,7 @@ export default function MyPage() {
           lp={editingLp}
           onClose={() => {
             setEditingLp(null);
-            queryClient.invalidateQueries({ queryKey: ["myLps"] });
+            queryClient.invalidateQueries({ queryKey: ["myLps", sortOrder] });
           }}
         />
       )}

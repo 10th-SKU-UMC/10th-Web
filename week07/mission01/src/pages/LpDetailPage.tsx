@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLpDetail, deleteLp, addLike, removeLike } from "../apis/lp";
+import type { LpDetailResponse } from "../apis/dto";
 import { useAuth } from "../hooks/useAuth";
 import CommentSection from "../components/CommentSection";
 import LpEditModal from "../components/LpEditModal";
@@ -65,8 +66,27 @@ export default function LpDetailPage() {
 
   const likeMutation = useMutation({
     mutationFn: () => (isLiked ? removeLike(id) : addLike(id)),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["lp", id] });
+      const previous = queryClient.getQueryData<LpDetailResponse>(["lp", id]);
+      queryClient.setQueryData<LpDetailResponse>(["lp", id], (old) => {
+        if (!old) return old;
+        const newLikes = isLiked
+          ? old.data.likes.filter((l) => l.userId !== userId)
+          : [...old.data.likes, { id: Date.now(), userId: userId!, lpId: id }];
+        return { ...old, data: { ...old.data, likes: newLikes } };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["lp", id], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["lp", id] });
+      queryClient.invalidateQueries({ queryKey: ["lps"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["likedLps"], refetchType: "all" });
     },
   });
 
