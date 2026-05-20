@@ -18,7 +18,7 @@ export const getMyLps = async (order: SortOrder = "desc", cursor?: number): Prom
 };
 
 export const getLikedLps = async (order: SortOrder = "desc", cursor?: number): Promise<LpListResponse> => {
-  const { data } = await axiosInstance.get("/v1/lps/liked", {
+  const { data } = await axiosInstance.get("/v1/lps/likes/me", {
     params: { order, ...(cursor !== undefined && cursor > 0 ? { cursor } : {}) },
   });
   return data;
