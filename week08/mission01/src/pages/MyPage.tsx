@@ -241,6 +241,10 @@ export default function MyPage() {
                 type="text"
                 value={bioInput}
                 onChange={(e) => setBioInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing) return;
+                  if (e.key === "Enter") { if (!nameInput.trim()) { alert("이름을 입력해주세요."); return; } profileMutation.mutate(); }
+                }}
                 placeholder="자기소개 (선택)"
                 className="rounded-lg border border-gray-600 bg-black px-4 py-2.5 text-white outline-none placeholder:text-gray-500 focus:border-pink-500"
               />
