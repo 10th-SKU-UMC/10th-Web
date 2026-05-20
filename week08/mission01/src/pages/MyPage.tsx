@@ -7,6 +7,7 @@ import { uploadImage } from "../apis/upload";
 import type { Lp } from "../apis/dto";
 import { useAuth } from "../hooks/useAuth";
 import LpEditModal from "../components/LpEditModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 type Tab = "liked" | "authored";
 type SortOrder = "asc" | "desc";
@@ -21,32 +22,45 @@ const DefaultAvatar = () => (
 
 /* ── LP 카드 (내가 작성한 LP 탭) ──────────────────── */
 function MyLpCard({ lp, onDeleted, onEdit }: { lp: Lp; onDeleted: () => void; onEdit: () => void }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const deleteMutation = useMutation({
     mutationFn: () => deleteLp(lp.id),
     onSuccess: onDeleted,
   });
 
   return (
-    <div className="flex items-center gap-4 rounded-xl bg-[#1a1a1a] p-3">
-      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800">
-        {lp.thumbnail ? (
-          <img src={lp.thumbnail} alt={lp.title} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-gray-600 text-xs">No img</div>
-        )}
+    <>
+      <div className="flex items-center gap-4 rounded-xl bg-[#1a1a1a] p-3">
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800">
+          {lp.thumbnail ? (
+            <img src={lp.thumbnail} alt={lp.title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-gray-600 text-xs">No img</div>
+          )}
+        </div>
+        <p className="flex-1 min-w-0 truncate text-sm font-medium text-white">{lp.title}</p>
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button" onClick={onEdit} className="text-gray-400 transition hover:text-white" aria-label="수정">✏️</button>
+          <button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            disabled={deleteMutation.isPending}
+            className="text-gray-400 transition hover:text-red-400 disabled:opacity-50"
+            aria-label="삭제"
+          >🗑️</button>
+        </div>
       </div>
-      <p className="flex-1 min-w-0 truncate text-sm font-medium text-white">{lp.title}</p>
-      <div className="flex shrink-0 items-center gap-2">
-        <button type="button" onClick={onEdit} className="text-gray-400 transition hover:text-white" aria-label="수정">✏️</button>
-        <button
-          type="button"
-          onClick={() => deleteMutation.mutate()}
-          disabled={deleteMutation.isPending}
-          className="text-gray-400 transition hover:text-red-400 disabled:opacity-50"
-          aria-label="삭제"
-        >🗑️</button>
-      </div>
-    </div>
+
+      {showConfirm && (
+        <ConfirmModal
+          message="삭제하시겠습니까?"
+          onConfirm={() => deleteMutation.mutate()}
+          onCancel={() => setShowConfirm(false)}
+          isLoading={deleteMutation.isPending}
+        />
+      )}
+    </>
   );
 }
 
