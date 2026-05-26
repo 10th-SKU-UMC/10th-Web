@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   IoSearchOutline,
@@ -24,7 +24,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const withdrawMutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
-      clearAuth();             // 로컬 토큰 · 상태 초기화
+      clearAuth(); // 로컬 토큰 · 상태 초기화
       setShowWithdrawModal(false);
       onClose();
       navigate("/login", { replace: true });
@@ -33,6 +33,20 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       alert("탈퇴 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
     },
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   return (
     <>
