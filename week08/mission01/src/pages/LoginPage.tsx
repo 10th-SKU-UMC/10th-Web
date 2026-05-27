@@ -12,11 +12,13 @@ export default function LoginPage() {
   const location = useLocation();
   const { login } = useAuth();
 
+  // location.state.from이 string임을 확인했으므로 그대로 사용
+  // (as {from:string}).from 처럼 다시 객체로 단언하면 undefined가 됨)
   const from =
-    typeof location.state === "object" && 
+    typeof location.state === "object" &&
     location.state !== null &&
     typeof location.state.from === "string"
-      ? (location.state.from as {from: string}).from
+      ? location.state.from
       : "/";
   const { values, errors, touched, getInputProps, handleBlur } =
     useForm<LoginFormValues>({

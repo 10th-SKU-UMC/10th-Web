@@ -45,7 +45,7 @@ export default function LpDetailPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["lp", id],
     queryFn: () => getLpDetail(id),
-    enabled: !isNaN(id),
+    enabled: !!accessToken && !isNaN(id), // 비로그인 시 리다이렉트 전 401 호출 차단
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
   });
