@@ -10,6 +10,9 @@ export default function ConfirmModal({ message, onConfirm, onCancel, isLoading }
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-message"
     >
       <div className="relative w-80 rounded-xl bg-[#2a2a2a] px-8 py-8 shadow-2xl">
         <button
@@ -21,7 +24,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel, isLoading }
           ✕
         </button>
 
-        <p className="mb-8 text-center text-base text-white">{message}</p>
+        <p id="confirm-modal-message" className="mb-8 text-center text-base text-white">{message}</p>
 
         <div className="flex justify-center gap-3">
           <button
