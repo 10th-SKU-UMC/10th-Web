@@ -14,7 +14,9 @@ const SEARCH_TYPES: { value: SearchType; label: string }[] = [
 
 function getRecentSearches(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+    const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+    // 파싱 결과가 배열이 아닐 경우 런타임 오류 방어
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -56,6 +58,8 @@ export default function SearchModal({ onClose }: Props) {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ["search", trimmed, searchType],
     queryFn: ({ pageParam }) =>
@@ -218,6 +222,17 @@ export default function SearchModal({ onClose }: Props) {
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="mb-3 h-48 animate-pulse rounded-xl bg-gray-800" />
                   ))}
+                </div>
+              ) : isError ? (
+                <div className="flex flex-col items-center gap-3 py-10">
+                  <p className="text-sm text-gray-400">검색 중 오류가 발생했습니다.</p>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="rounded bg-pink-500 px-4 py-2 text-sm text-white transition hover:bg-pink-600"
+                  >
+                    다시 시도
+                  </button>
                 </div>
               ) : results.length === 0 ? (
                 <p className="py-10 text-center text-sm text-gray-500">검색 결과가 없습니다.</p>
