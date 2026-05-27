@@ -1,10 +1,10 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getMyInfo, updateMyInfo, type UserProfile } from "../apis/user";
+import { getMyInfo, updateMyInfo } from "../apis/user";
 import { getMyLps, getLikedLps, deleteLp } from "../apis/lp";
 import { uploadImage } from "../apis/upload";
-import type { Lp } from "../apis/dto";
+import type { Lp, UserProfile } from "../apis/dto";
 import { useAuth } from "../hooks/useAuth";
 import LpEditModal from "../components/LpEditModal";
 import ConfirmModal from "../components/ConfirmModal";
