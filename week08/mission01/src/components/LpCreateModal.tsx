@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type KeyboardEvent, type SyntheticEvent } from "react";
+import { useRef, useState, useEffect, type ChangeEvent, type KeyboardEvent, type SyntheticEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { createLp } from "../apis/lp";
@@ -30,6 +30,13 @@ export default function LpCreateModal({ onClose }: Props) {
   const [tags, setTags] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Blob URL 메모리 누수 방지: previewUrl 교체·언마운트 시 revoke
+  useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -105,11 +112,12 @@ export default function LpCreateModal({ onClose }: Props) {
         </button>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* 이미지 영역 */}
-          <div
-            className="relative mx-auto h-52 cursor-pointer"
+          {/* 이미지 업로드 — label로 키보드 접근 가능 */}
+          <label
+            htmlFor="lp-create-file-input"
+            className="relative mx-auto block h-52 cursor-pointer"
             style={{ width: previewUrl ? "284px" : "176px" }}
-            onClick={() => fileInputRef.current?.click()}
+            aria-label="이미지 선택"
           >
             {previewUrl ? (
               <>
@@ -129,9 +137,10 @@ export default function LpCreateModal({ onClose }: Props) {
                 <VinylRecord />
               </div>
             )}
-          </div>
+          </label>
           <input
             ref={fileInputRef}
+            id="lp-create-file-input"
             type="file"
             accept="image/*"
             className="hidden"
