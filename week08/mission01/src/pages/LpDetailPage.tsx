@@ -8,7 +8,7 @@ import CommentSection from "../components/CommentSection";
 import LpEditModal from "../components/LpEditModal";
 
 const formatDate = (dateStr: string) => {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const diff = Math.max(0, Date.now() - new Date(dateStr).getTime());
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor(diff / 3600000);
   if (hours < 24) return `${hours}시간 전`;
