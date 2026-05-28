@@ -17,6 +17,7 @@ interface AppState {
   isOpen: boolean;
 
   increase: (id: string) => void;
+  decrease: (id: string) => void;
   clearCart: () => void;
   calculateTotals: () => void;
 
