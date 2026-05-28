@@ -1,9 +1,7 @@
-import { useDispatch } from "react-redux";
-import { closeModal } from "../features/modal/modalSlice";
-import { clearCart } from "../features/cart/cartSlice";
+import { useStore } from "../store/useStore";
 
 export default function Modal() {
-  const dispatch = useDispatch();
+  const { closeModal, clearCart } = useStore();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -16,7 +14,7 @@ export default function Modal() {
 
         <div className="flex justify-center gap-4">
           <button
-            onClick={() => dispatch(closeModal())}
+            onClick={() => closeModal()}
             className="rounded-lg border-2 border-gray-300 px-6 py-2 font-semibold text-gray-700 transition hover:bg-gray-100"
           >
             아니요
@@ -24,8 +22,8 @@ export default function Modal() {
 
           <button
             onClick={() => {
-              dispatch(clearCart());
-              dispatch(closeModal());
+              clearCart();
+              closeModal();
             }}
             className="rounded-lg border-2 border-red-500 bg-red-500 px-6 py-2 font-semibold text-white transition hover:bg-red-600 hover:border-red-600"
           >

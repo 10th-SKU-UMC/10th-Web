@@ -1,33 +1,29 @@
 import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import type { RootState } from "../store/store";
-import {
-  increase,
-  decrease,
-  clearCart,
-  calculateTotals,
-} from "../features/cart/cartSlice";
-import { openModal } from "../features/modal/modalSlice";
+import { useStore } from "../store/useStore";
 import Modal from "../components/Modal";
 
 export default function CartPage() {
-  const dispatch = useDispatch();
-
-  const { cartItems, amount, total } = useSelector(
-    (state: RootState) => state.cart,
-  );
-  const { isOpen } = useSelector((state: RootState) => state.modal);
+  const {
+    cartItems,
+    amount,
+    total,
+    isOpen,
+    increase,
+    decrease,
+    calculateTotals,
+    openModal,
+  } = useStore();
 
   useEffect(() => {
-    dispatch(calculateTotals());
-  }, [cartItems, dispatch]);
+    calculateTotals();
+  }, [cartItems, calculateTotals]);
 
   if (amount < 1) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-        <nav className="w-full bg-blue-600 py-4 px-8 flex justify-center shadow-md">
-          <div className="flex max-w-3xl w-full justify-between items-center text-white">
-            <h1 className="text-2xl font-bold tracking-wider">Redux Cart</h1>
+      <div className="flex min-h-screen flex-col items-center bg-gray-50">
+        <nav className="flex w-full justify-center bg-blue-600 px-8 py-4 shadow-md">
+          <div className="flex w-full max-w-3xl items-center justify-between text-white">
+            <h1 className="text-2xl font-bold tracking-wider">Zustand Cart</h1>
             <div className="relative">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -50,7 +46,7 @@ export default function CartPage() {
           </div>
         </nav>
         <main className="w-full max-w-3xl px-4 py-32 text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 tracking-wide">
+          <h2 className="mb-4 text-2xl font-bold tracking-wide text-gray-800">
             장바구니가 비어 있습니다
           </h2>
           <p className="text-gray-500">선택하신 음반 상품이 없습니다.</p>
@@ -58,14 +54,15 @@ export default function CartPage() {
       </div>
     );
   }
-
   return (
     <>
-      {isOpen && <Modal />} {/*왜 <> 태그 안에 들어가야하지?*/}
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-        <nav className="w-full bg-blue-600 py-4 px-8 flex justify-center shadow-md">
-          <div className="flex max-w-3xl w-full justify-between items-center text-white">
-            <h1 className="text-2xl font-bold tracking-wider">Redux Cart</h1>
+      {isOpen && <Modal />}
+
+      <div className="flex min-h-screen flex-col items-center bg-gray-50">
+        {/* 상단 네비게이션 */}
+        <nav className="flex w-full justify-center bg-blue-600 px-8 py-4 shadow-md">
+          <div className="flex w-full max-w-3xl items-center justify-between text-white">
+            <h1 className="text-2xl font-bold tracking-wider">Zustand Cart</h1>
             <div className="relative">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -87,8 +84,9 @@ export default function CartPage() {
             </div>
           </div>
         </nav>
+
         <main className="w-full max-w-3xl px-4 py-12">
-          <h2 className="mb-8 text-center text-3xl font-bold text-gray-800 uppercase tracking-widest">
+          <h2 className="mb-8 text-center text-3xl font-bold uppercase tracking-widest text-gray-800">
             당신의 장바구니
           </h2>
 
@@ -105,7 +103,7 @@ export default function CartPage() {
                     className="h-24 w-24 rounded-lg object-cover"
                   />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 tracking-wide">
+                    <h3 className="text-lg font-semibold tracking-wide text-gray-800">
                       {item.title}
                     </h3>
                     <p className="mb-2 text-sm text-gray-500">{item.singer}</p>
@@ -117,7 +115,7 @@ export default function CartPage() {
 
                 <div className="flex flex-col items-center">
                   <button
-                    onClick={() => dispatch(increase(item.id))}
+                    onClick={() => increase(item.id)}
                     className="p-1 text-blue-600 transition hover:text-blue-800"
                   >
                     <svg
@@ -140,7 +138,7 @@ export default function CartPage() {
                   </p>
 
                   <button
-                    onClick={() => dispatch(decrease(item.id))}
+                    onClick={() => decrease(item.id)}
                     className="p-1 text-blue-600 transition hover:text-blue-800"
                   >
                     <svg
@@ -161,6 +159,7 @@ export default function CartPage() {
               </div>
             ))}
           </div>
+
           <footer className="mt-12 border-t-2 border-gray-200 pt-6">
             <div className="mb-6 flex items-center justify-between text-xl font-bold text-gray-800">
               <span>총 금액</span>
@@ -168,8 +167,8 @@ export default function CartPage() {
             </div>
             <div className="flex justify-center">
               <button
-                onClick={() => dispatch(openModal())}
-                className="rounded-lg border-2 border-red-500 px-8 py-2 font-semibold text-red-500 transition-colors hover:bg-red-500 hover:text-white uppercase tracking-wider"
+                onClick={() => openModal()}
+                className="rounded-lg border-2 border-red-500 px-8 py-2 font-semibold uppercase tracking-wider text-red-500 transition-colors hover:bg-red-500 hover:text-white"
               >
                 장바구니 초기화
               </button>
