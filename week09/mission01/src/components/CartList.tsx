@@ -1,3 +1,4 @@
+import { BsCart3 } from 'react-icons/bs';
 import useAppDispatch from '../hooks/useAppDispatch';
 import useAppSelector from '../hooks/useAppSelector';
 import { clearCart, calculateTotals } from '../store/cartSlice';
@@ -15,7 +16,7 @@ export default function CartList() {
   if (cartItems.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-2xl bg-[#1a1a2e] py-16 text-center">
-        <p className="text-4xl">🛒</p>
+        <BsCart3 size={48} className="text-gray-500" />
         <p className="text-lg font-semibold text-white">장바구니가 비어 있습니다.</p>
         <p className="text-sm text-gray-500">음반을 담아보세요!</p>
       </div>
@@ -28,17 +29,17 @@ export default function CartList() {
         <div key={item.id}>
           <CartItem item={item} />
           {i < cartItems.length - 1 && (
-            <div className="mx-6 border-t border-white/[0.07]" />
+            <div className="mx-4 border-t border-white/[0.07] sm:mx-6" />
           )}
         </div>
       ))}
 
       {/* 전체 삭제 버튼 */}
-      <div className="flex justify-center px-6 py-5">
+      <div className="flex justify-center px-4 py-6 sm:px-6">
         <button
           type="button"
           onClick={handleClearCart}
-          className="rounded-xl border border-white/20 px-10 py-2.5 text-sm font-semibold text-white/80 transition hover:border-violet-500 hover:text-violet-400"
+          className="w-full max-w-xs rounded-xl border border-white/20 py-3 text-sm font-semibold text-white/80 transition hover:border-violet-500 hover:text-violet-400 sm:w-auto sm:px-16 sm:py-3"
         >
           전체 삭제
         </button>
