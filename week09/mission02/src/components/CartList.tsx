@@ -1,16 +1,15 @@
 import { BsCart3 } from 'react-icons/bs';
 import useAppDispatch from '../hooks/useAppDispatch';
 import useAppSelector from '../hooks/useAppSelector';
-import { clearCart, calculateTotals } from '../features/cart/cartSlice';
+import { openModal } from '../features/modal/modalSlice';
 import CartItem from './CartItem';
 
 export default function CartList() {
   const dispatch = useAppDispatch();
   const { cartItems } = useAppSelector((state) => state.cart);
 
-  const handleClearCart = () => {
-    dispatch(clearCart());
-    dispatch(calculateTotals());
+  const handleOpenModal = () => {
+    dispatch(openModal());
   };
 
   if (cartItems.length === 0) {
@@ -38,7 +37,7 @@ export default function CartList() {
       <div className="flex justify-center px-4 py-6 sm:px-6">
         <button
           type="button"
-          onClick={handleClearCart}
+          onClick={handleOpenModal}
           className="w-full max-w-xs rounded-xl border border-white/20 py-3 text-sm font-semibold text-white/80 transition hover:border-violet-500 hover:text-violet-400 sm:w-auto sm:px-16 sm:py-3"
         >
           전체 삭제

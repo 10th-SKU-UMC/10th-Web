@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import CartList from './components/CartList';
 import CartTotals from './components/CartTotals';
+import Modal from './components/Modal';
 import useAppDispatch from './hooks/useAppDispatch';
 import useAppSelector from './hooks/useAppSelector';
 import { calculateTotals } from './features/cart/cartSlice';
@@ -9,6 +10,7 @@ import { calculateTotals } from './features/cart/cartSlice';
 export default function App() {
   const dispatch = useAppDispatch();
   const { cartItems } = useAppSelector((state) => state.cart);
+  const { isOpen } = useAppSelector((state) => state.modal);
 
   // 수량·아이템 변경이 있을 때마다 총 수량·총 금액 자동 재계산
   useEffect(() => {
@@ -22,6 +24,9 @@ export default function App() {
         <CartList />
         <CartTotals />
       </main>
+
+      {/* 모달: isOpen이 true일 때만 렌더링 */}
+      {isOpen && <Modal />}
     </div>
   );
 }
