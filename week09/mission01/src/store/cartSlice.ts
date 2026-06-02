@@ -1,16 +1,20 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import cartItems, { type CartItem } from '../constants/cartItems';
+import cartItemsData, { type CartItem } from '../constants/cartItems';
 
 interface CartState {
-  items: CartItem[];
-  totalAmount: number;
-  totalPrice: number;
+  cartItems: CartItem[];
+  amount: number;
+  total: number;
 }
 
 const initialState: CartState = {
-  items: cartItems,
-  totalAmount: 0,
-  totalPrice: 0,
+  cartItems: cartItemsData,
+  // 초기 렌더링 시 amount·total 자동 계산
+  amount: cartItemsData.reduce((sum, item) => sum + item.amount, 0),
+  total: cartItemsData.reduce(
+    (sum, item) => sum + Number(item.price) * item.amount,
+    0,
+  ),
 };
 
 const cartSlice = createSlice({
@@ -18,28 +22,32 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     increase(state, action: PayloadAction<string>) {
-      const item = state.items.find((i) => i.id === action.payload);
+      const item = state.cartItems.find((i) => i.id === action.payload);
       if (item) item.amount += 1;
     },
     decrease(state, action: PayloadAction<string>) {
-      const item = state.items.find((i) => i.id === action.payload);
+      const item = state.cartItems.find((i) => i.id === action.payload);
       if (item) {
         if (item.amount <= 1) {
-          state.items = state.items.filter((i) => i.id !== action.payload);
+          state.cartItems = state.cartItems.filter(
+            (i) => i.id !== action.payload,
+          );
         } else {
           item.amount -= 1;
         }
       }
     },
     removeItem(state, action: PayloadAction<string>) {
-      state.items = state.items.filter((i) => i.id !== action.payload);
+      state.cartItems = state.cartItems.filter((i) => i.id !== action.payload);
     },
     clearCart(state) {
-      state.items = [];
+      state.cartItems = [];
+      state.amount = 0;
+      state.total = 0;
     },
     calculateTotals(state) {
-      state.totalAmount = state.items.reduce((sum, item) => sum + item.amount, 0);
-      state.totalPrice = state.items.reduce(
+      state.amount = state.cartItems.reduce((sum, item) => sum + item.amount, 0);
+      state.total = state.cartItems.reduce(
         (sum, item) => sum + Number(item.price) * item.amount,
         0,
       );
