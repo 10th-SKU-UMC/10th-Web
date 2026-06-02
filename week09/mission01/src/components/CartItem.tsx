@@ -49,8 +49,7 @@ export default function CartItem({ item }: Props) {
         <button
           type="button"
           onClick={handleDecrease}
-          disabled={item.amount <= 1}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2d2d44] text-base text-white transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-30 sm:h-9 sm:w-9 sm:text-lg"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2d2d44] text-base text-white transition hover:bg-violet-600 sm:h-9 sm:w-9 sm:text-lg"
           aria-label="수량 감소"
         >
           −
