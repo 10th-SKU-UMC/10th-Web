@@ -8,7 +8,7 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         <span className="text-2xl">🎵</span>
         <span className="text-xl font-bold tracking-tight text-white">
-          Ohtani Ahn
+          Noir
         </span>
       </div>
       <div className="flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-white">
