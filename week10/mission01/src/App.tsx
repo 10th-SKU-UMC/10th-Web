@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import SearchForm from './components/SearchForm';
@@ -20,11 +20,11 @@ export default function App() {
     enabled: searchParams !== null,
   });
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback((e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!query.trim()) return;
     setSearchParams({ query: query.trim(), includeAdult, language });
-  };
+  }, [query, includeAdult, language]);
 
   const handleMovieClick = useCallback((movie: Movie) => {
     setSelectedMovie(movie);
@@ -34,7 +34,7 @@ export default function App() {
     setSelectedMovie(null);
   }, []);
 
-  const movies = data?.results ?? [];
+  const movies = useMemo(() => data?.results ?? [], [data]);
 
   return (
     <div className="min-h-screen bg-[#0a0f1e] font-sans">
