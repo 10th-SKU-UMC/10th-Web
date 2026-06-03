@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Movie } from '../types/movie';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -13,7 +14,7 @@ function getRatingColor(rating: number): string {
   return 'bg-red-500';
 }
 
-export default function MovieCard({ movie, onClick }: Props) {
+function MovieCard({ movie, onClick }: Props) {
   const posterUrl = movie.poster_path
     ? `${POSTER_BASE}${movie.poster_path}`
     : null;
@@ -65,3 +66,5 @@ export default function MovieCard({ movie, onClick }: Props) {
     </button>
   );
 }
+
+export default memo(MovieCard);
