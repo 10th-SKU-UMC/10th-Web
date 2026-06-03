@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { Language } from '../types/movie';
 
@@ -17,7 +18,7 @@ const LANGUAGE_OPTIONS: { label: string; value: Language }[] = [
   { label: '일본어', value: 'ja-JP' },
 ];
 
-export default function SearchForm({
+function SearchForm({
   query,
   includeAdult,
   language,
@@ -104,3 +105,5 @@ export default function SearchForm({
     </form>
   );
 }
+
+export default memo(SearchForm);
