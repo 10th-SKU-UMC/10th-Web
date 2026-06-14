@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# Build
+dist/
+build/
+out/
+
+# Env
+.env
+.env.local
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# React/Vite
+coverage/
