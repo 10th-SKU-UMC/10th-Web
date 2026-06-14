@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import UseCallbackPage from "./07-useCallback-memo/UseCallbackPage";
+import UseMemoPage from "./08-useMemo/useMemoPage";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +22,7 @@ const router = createBrowserRouter([
     path: "useCallback",
     element: <UseCallbackPage />,
   },
+  { path: "useMemo", element: <UseMemoPage /> },
 ]);
 
 function App() {
