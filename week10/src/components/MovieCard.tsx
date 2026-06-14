@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { Movie } from "../types/movie";
 
 interface MovieCardProps {
@@ -6,7 +6,7 @@ interface MovieCardProps {
   onClick: (movieId: number) => void;
 }
 
-export default function MovieCard({ movie, onClick }: MovieCardProps) {
+function MovieCard({ movie, onClick }: MovieCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -41,3 +41,5 @@ export default function MovieCard({ movie, onClick }: MovieCardProps) {
     </div>
   );
 }
+
+export default memo(MovieCard);

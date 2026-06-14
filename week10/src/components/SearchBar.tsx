@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 
 interface SearchBarProps {
   onSearch: (title: string, language: string, includeAdult: boolean) => void;
 }
 
-export default function SearchBar({ onSearch }: SearchBarProps) {
+function SearchBar({ onSearch }: SearchBarProps) {
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState("ko-KR");
   const [includeAdult, setIncludeAdult] = useState(false);
@@ -66,3 +66,5 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     </div>
   );
 }
+
+export default memo(SearchBar);

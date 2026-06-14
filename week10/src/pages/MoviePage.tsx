@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { type MovieResponse } from "../types/movie";
 import MovieCard from "../components/MovieCard";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -26,17 +26,16 @@ export default function MoviePage() {
     },
   });
 
-  const handleSearch = (
-    title: string,
-    language: string,
-    includeAdult: boolean,
-  ) => {
-    setSearchUrl(
-      `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
-        title,
-      )}&language=${language}&include_adult=${includeAdult}`,
-    );
-  };
+  const handleSearch = useCallback(
+    (title: string, language: string, includeAdult: boolean) => {
+      setSearchUrl(
+        `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
+          title,
+        )}&language=${language}&include_adult=${includeAdult}`,
+      );
+    },
+    [],
+  );
 
   if (error) {
     return (
