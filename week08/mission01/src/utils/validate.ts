@@ -10,6 +10,9 @@ export interface SignupFormValues {
   nickname: string;
 }
 
+// 이메일 정규식 — 앵커(^...$) 포함, 부분 매치 차단
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const validateLogin = (values: LoginFormValues) => {
   const errors = {
     email: "",
@@ -18,7 +21,7 @@ export const validateLogin = (values: LoginFormValues) => {
 
   if (!values.email) {
     errors.email = "이메일을 입력해주세요.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+  } else if (!EMAIL_REGEX.test(values.email)) {
     errors.email = "올바른 이메일 형식이 아닙니다.";
   }
 
@@ -41,7 +44,7 @@ export const validateSignup = (values: SignupFormValues) => {
 
   if (!values.email) {
     errors.email = "이메일을 입력해주세요.";
-  } else if (!/\S+@\S+\.\S+/.test(values.email)) {
+  } else if (!EMAIL_REGEX.test(values.email)) {
     errors.email = "올바른 이메일 형식이 아닙니다.";
   }
 

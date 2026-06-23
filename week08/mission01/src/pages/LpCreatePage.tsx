@@ -44,6 +44,7 @@ export default function LpCreatePage() {
   };
 
   const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return; // 한글 IME 조합 중 Enter 방지
     if (e.key === "Enter") {
       e.preventDefault();
       handleAddTag();

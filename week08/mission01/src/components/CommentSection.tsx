@@ -78,6 +78,9 @@ export default function CommentSection({ lpId }: CommentSectionProps) {
       setInputError("");
       queryClient.invalidateQueries({ queryKey: ["lpComments", lpId] });
     },
+    onError: () => {
+      alert("댓글 작성에 실패했습니다.");
+    },
   });
 
   const updateMutation = useMutation({
@@ -88,12 +91,18 @@ export default function CommentSection({ lpId }: CommentSectionProps) {
       setEditInput("");
       queryClient.invalidateQueries({ queryKey: ["lpComments", lpId] });
     },
+    onError: () => {
+      alert("댓글 수정에 실패했습니다.");
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (commentId: number) => deleteComment(lpId, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lpComments", lpId] });
+    },
+    onError: () => {
+      alert("댓글 삭제에 실패했습니다.");
     },
   });
 
@@ -112,7 +121,7 @@ export default function CommentSection({ lpId }: CommentSectionProps) {
   };
 
   const formatDate = (dateStr: string) => {
-    const diff = new Date().getTime() - new Date(dateStr).getTime();
+    const diff = Math.max(0, new Date().getTime() - new Date(dateStr).getTime());
     const mins = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);

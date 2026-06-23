@@ -1,32 +1,14 @@
 import { axiosInstance } from "./axios";
+import type { ApiResponse, UserProfile, UpdateUserDto } from "./dto";
 
-export interface UserProfile {
-  id: number;
-  name: string;
-  email: string;
-  bio: string | null;
-  avatar: string | null;
-}
-
-interface UserResponse {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: UserProfile;
-}
-
-export interface UpdateUserDto {
-  name?: string;
-  bio?: string;
-  avatar?: string;
-}
+export type { UserProfile, UpdateUserDto } from "./dto";
 
 export const getMyInfo = async (): Promise<UserProfile> => {
-  const { data } = await axiosInstance.get<UserResponse>("/v1/users/me");
+  const { data } = await axiosInstance.get<ApiResponse<UserProfile>>("/v1/users/me");
   return data.data;
 };
 
 export const updateMyInfo = async (body: UpdateUserDto): Promise<UserProfile> => {
-  const { data } = await axiosInstance.patch<UserResponse>("/v1/users", body);
+  const { data } = await axiosInstance.patch<ApiResponse<UserProfile>>("/v1/users", body);
   return data.data;
 };

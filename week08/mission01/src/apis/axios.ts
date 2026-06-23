@@ -8,6 +8,7 @@ interface CustomInternalAxiosRequestConfig extends InternalAxiosRequestConfig {
 
 export const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_SERVER_URL,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -32,6 +33,9 @@ const removeTokensFromStorage = () => {
   localStorage.removeItem(LOCAL_STORAGE_KEY.accessToken);
   localStorage.removeItem(LOCAL_STORAGE_KEY.refreshToken);
 };
+
+// 동시 401 발생 시 refresh 요청이 중복 발행되지 않도록 단일 비행(single-flight) 관리
+let refreshTokenPromise: Promise<string> | null = null;
 
 axiosInstance.interceptors.request.use((config) => {
   const accessToken = getTokenFromStorage(LOCAL_STORAGE_KEY.accessToken);
@@ -58,34 +62,37 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = getTokenFromStorage(LOCAL_STORAGE_KEY.refreshToken);
-
-        if (!refreshToken) {
-          removeTokensFromStorage();
-          window.location.href = "/login";
-          return Promise.reject(error);
-        }
-
-        const response = await postRefreshToken({
-          refresh: refreshToken,
-        });
-
-        const newAccessToken = response.data.accessToken;
-        const newRefreshToken = response.data.refreshToken;
-
-        setTokenToStorage(LOCAL_STORAGE_KEY.accessToken, newAccessToken);
-        setTokenToStorage(LOCAL_STORAGE_KEY.refreshToken, newRefreshToken);
-
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
+      // refreshToken null 체크는 Promise 생성 전 각 요청에서 수행
+      const refreshToken = getTokenFromStorage(LOCAL_STORAGE_KEY.refreshToken);
+      if (!refreshToken) {
         removeTokensFromStorage();
         window.location.href = "/login";
-
-        return Promise.reject(refreshError);
+        return Promise.reject(error);
       }
+
+      // 이미 진행 중인 refresh가 없을 때만 새 요청 발행 → 나머지는 동일 Promise 공유
+      if (!refreshTokenPromise) {
+        refreshTokenPromise = postRefreshToken({ refresh: refreshToken })
+          .then((response) => {
+            const newAccessToken = response.data.accessToken;
+            const newRefreshToken = response.data.refreshToken;
+            setTokenToStorage(LOCAL_STORAGE_KEY.accessToken, newAccessToken);
+            setTokenToStorage(LOCAL_STORAGE_KEY.refreshToken, newRefreshToken);
+            return newAccessToken;
+          })
+          .catch((err) => {
+            removeTokensFromStorage();
+            window.location.href = "/login";
+            throw err;
+          })
+          .finally(() => {
+            refreshTokenPromise = null;
+          });
+      }
+
+      const newAccessToken = await refreshTokenPromise;
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+      return axiosInstance(originalRequest);
     }
 
     return Promise.reject(error);

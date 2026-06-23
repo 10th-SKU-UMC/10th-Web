@@ -6,8 +6,8 @@ import type {
   RequestCreateLpDto,
   SortOrder,
   CommentListResponse,
+  CommentResponse,
   RequestCreateCommentDto,
-  Comment,
 } from "./dto";
 
 export const getMyLps = async (order: SortOrder = "desc", cursor?: number): Promise<LpListResponse> => {
@@ -95,7 +95,7 @@ export const getComments = async (
   return data;
 };
 
-export const createComment = async (lpId: number, body: RequestCreateCommentDto): Promise<{ status: boolean; data: Comment }> => {
+export const createComment = async (lpId: number, body: RequestCreateCommentDto): Promise<CommentResponse> => {
   const { data } = await axiosInstance.post(`/v1/lps/${lpId}/comments`, body);
   return data;
 };
@@ -104,7 +104,7 @@ export const deleteComment = async (lpId: number, commentId: number): Promise<vo
   await axiosInstance.delete(`/v1/lps/${lpId}/comments/${commentId}`);
 };
 
-export const updateComment = async (lpId: number, commentId: number, body: RequestCreateCommentDto): Promise<{ status: boolean; data: Comment }> => {
+export const updateComment = async (lpId: number, commentId: number, body: RequestCreateCommentDto): Promise<CommentResponse> => {
   const { data } = await axiosInstance.patch(`/v1/lps/${lpId}/comments/${commentId}`, body);
   return data;
 };

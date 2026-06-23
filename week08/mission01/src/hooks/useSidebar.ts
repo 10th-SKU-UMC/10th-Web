@@ -16,9 +16,10 @@ export function useSidebar() {
   }, [close]);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = isOpen ? "hidden" : prevOverflow;
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
     };
   }, [isOpen]);
 

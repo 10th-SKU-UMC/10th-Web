@@ -1,11 +1,9 @@
 import { axiosInstance } from "./axios";
-
 import type {
   RequestSignupDto,
   ResponseSignupDto,
   RequestSigninDto,
   ResponseSigninDto,
-  ResponseMyInfoDto,
   RequestRefreshTokenDto,
   ResponseRefreshTokenDto,
 } from "./dto";
@@ -14,7 +12,6 @@ export const postSignup = async (
   body: RequestSignupDto,
 ): Promise<ResponseSignupDto> => {
   const { data } = await axiosInstance.post("/v1/auth/signup", body);
-
   return data;
 };
 
@@ -22,25 +19,16 @@ export const postSignin = async (
   body: RequestSigninDto,
 ): Promise<ResponseSigninDto> => {
   const { data } = await axiosInstance.post("/v1/auth/signin", body);
-
-  return data;
-};
-
-export const getMyInfo = async (): Promise<ResponseMyInfoDto> => {
-  const { data } = await axiosInstance.get("/v1/users/me");
-
   return data;
 };
 
 export const postLogout = async () => {
   const { data } = await axiosInstance.post("/v1/auth/logout");
-
-  return data; 
+  return data;
 };
 
 export const deleteAccount = async () => {
   const { data } = await axiosInstance.delete("/v1/users");
-
   return data;
 };
 
@@ -48,6 +36,5 @@ export const postRefreshToken = async (
   body: RequestRefreshTokenDto,
 ): Promise<ResponseRefreshTokenDto> => {
   const { data } = await axiosInstance.post("/v1/auth/refresh", body);
-
   return data;
 };

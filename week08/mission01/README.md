@@ -126,7 +126,7 @@ pnpm install
 
 # 환경변수 설정
 cp .env.example .env
-# .env에 VITE_SERVER_URL 입력
+# .env에 VITE_SERVER_URL, VITE_TMDB_KEY 입력
 
 # 개발 서버 실행
 pnpm dev
@@ -139,3 +139,4 @@ pnpm dev
 | 키 | 설명 |
 |----|------|
 | `VITE_SERVER_URL` | 백엔드 API 서버 주소 |
+| `VITE_TMDB_KEY` | TMDB API 키 |

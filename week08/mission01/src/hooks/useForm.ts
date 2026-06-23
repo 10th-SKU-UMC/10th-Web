@@ -17,8 +17,7 @@ function useForm<T extends { [K in keyof T]: string }>({
 
   const errors = useMemo(() => {
     return validate(values);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values]);
+  }, [values, validate]);
 
   const handleChange = (name: keyof T, value: T[keyof T]) => {
     setValues((prevValues) => ({

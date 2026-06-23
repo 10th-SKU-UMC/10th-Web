@@ -1,20 +1,20 @@
-export interface RequestSigninDto {
-  email: string;
-  password: string;
-}
-
-export interface ResponseSigninDto {
+// ─── 공통 API 응답 래퍼 ───────────────────────────────────────
+/** 서버 응답 공통 래퍼. 모든 Response 타입은 이 제네릭을 통해 정의한다. */
+export interface ApiResponse<T> {
   status: boolean;
   statusCode: number;
   message: string;
-  data: {
-    id: number;
-    name: string;
-    accessToken: string;
-    refreshToken: string;
-  };
+  data: T;
 }
 
+/** 커서 기반 페이지네이션 응답 공통 구조 */
+export interface PaginatedData<T> {
+  data: T[];
+  nextCursor: number | null;
+  hasNext: boolean;
+}
+
+// ─── 인증 ─────────────────────────────────────────────────────
 export interface RequestSignupDto {
   email: string;
   password: string;
@@ -27,29 +27,43 @@ export interface ResponseSignupDto {
   name?: string;
 }
 
-export interface ResponseMyInfoDto {
-  id: number;
+export interface RequestSigninDto {
   email: string;
-  name: string;
+  password: string;
 }
+
+/** signin / refresh 응답의 공통 data 구조 */
+export interface AuthTokenData {
+  id: number;
+  name: string;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export type ResponseSigninDto = ApiResponse<AuthTokenData>;
 
 export interface RequestRefreshTokenDto {
   refresh: string;
 }
 
-export interface ResponseRefreshTokenDto {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: {
-    id: number;
-    name: string;
-    accessToken: string;
-    refreshToken: string;
-  };
+export type ResponseRefreshTokenDto = ApiResponse<AuthTokenData>;
+
+// ─── 유저 ─────────────────────────────────────────────────────
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  bio: string | null;
+  avatar: string | null;
 }
 
-// LP Types
+export interface UpdateUserDto {
+  name?: string;
+  bio?: string;
+  avatar?: string;
+}
+
+// ─── LP ───────────────────────────────────────────────────────
 export interface LpAuthor {
   id: number;
   name: string;
@@ -87,23 +101,9 @@ export interface Lp {
 
 export type SortOrder = "asc" | "desc";
 
-export interface LpListResponse {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: {
-    data: Lp[];
-    nextCursor: number | null;
-    hasNext: boolean;
-  };
-}
-
-export interface LpDetailResponse {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: Lp;
-}
+export type LpListResponse = ApiResponse<PaginatedData<Lp>>;
+export type LpDetailResponse = ApiResponse<Lp>;
+export type LikeResponse = ApiResponse<LpLike | null>;
 
 export interface RequestCreateLpDto {
   title: string;
@@ -113,13 +113,7 @@ export interface RequestCreateLpDto {
   published: boolean;
 }
 
-export interface LikeResponse {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: LpLike | null;
-}
-
+// ─── 댓글 ─────────────────────────────────────────────────────
 export interface Comment {
   id: number;
   content: string;
@@ -130,17 +124,15 @@ export interface Comment {
   author?: LpAuthor;
 }
 
-export interface CommentListResponse {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: {
-    data: Comment[];
-    nextCursor: number | null;
-    hasNext: boolean;
-  };
-}
-
 export interface RequestCreateCommentDto {
   content: string;
 }
+
+export type CommentListResponse = ApiResponse<PaginatedData<Comment>>;
+export type CommentResponse = ApiResponse<Comment>;
+
+// ─── 업로드 ────────────────────────────────────────────────────
+export interface UploadData {
+  imageUrl: string;
+}
+export type UploadResponse = ApiResponse<UploadData>;

@@ -1,10 +1,10 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getMyInfo, updateMyInfo, type UserProfile } from "../apis/user";
+import { getMyInfo, updateMyInfo } from "../apis/user";
 import { getMyLps, getLikedLps, deleteLp } from "../apis/lp";
 import { uploadImage } from "../apis/upload";
-import type { Lp } from "../apis/dto";
+import type { Lp, UserProfile } from "../apis/dto";
 import { useAuth } from "../hooks/useAuth";
 import LpEditModal from "../components/LpEditModal";
 import ConfirmModal from "../components/ConfirmModal";
@@ -27,6 +27,7 @@ function MyLpCard({ lp, onDeleted, onEdit }: { lp: Lp; onDeleted: () => void; on
   const deleteMutation = useMutation({
     mutationFn: () => deleteLp(lp.id),
     onSuccess: onDeleted,
+    onError: () => alert("삭제에 실패했습니다."),
   });
 
   return (
@@ -90,6 +91,7 @@ export default function MyPage() {
   const queryClient = useQueryClient();
   const { updateName } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -100,19 +102,38 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<Tab>("liked");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
+  // avatarPreview Blob URL 메모리 누수 방지
+  useEffect(() => {
+    return () => {
+      if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["myInfo"],
     queryFn: getMyInfo,
   });
 
-  const { data: authoredData, isLoading: authoredLoading } = useInfiniteQuery({
+  const {
+    data: authoredData,
+    isLoading: authoredLoading,
+    fetchNextPage: fetchNextAuthoredPage,
+    hasNextPage: hasNextAuthoredPage,
+    isFetchingNextPage: isFetchingNextAuthoredPage,
+  } = useInfiniteQuery({
     queryKey: ["myLps", sortOrder],
     queryFn: ({ pageParam }) => getMyLps(sortOrder, pageParam as number | undefined),
     getNextPageParam: (last) => last.data.hasNext ? (last.data.nextCursor ?? undefined) : undefined,
     initialPageParam: 0,
   });
 
-  const { data: likedData, isLoading: likedLoading } = useInfiniteQuery({
+  const {
+    data: likedData,
+    isLoading: likedLoading,
+    fetchNextPage: fetchNextLikedPage,
+    hasNextPage: hasNextLikedPage,
+    isFetchingNextPage: isFetchingNextLikedPage,
+  } = useInfiniteQuery({
     queryKey: ["likedLps", sortOrder],
     queryFn: ({ pageParam }) => getLikedLps(sortOrder, pageParam as number | undefined),
     getNextPageParam: (last) => last.data.hasNext ? (last.data.nextCursor ?? undefined) : undefined,
@@ -121,6 +142,33 @@ export default function MyPage() {
 
   const myLps = authoredData?.pages.flatMap((p) => p.data.data) ?? [];
   const likedLps = likedData?.pages.flatMap((p) => p.data.data) ?? [];
+
+  // 무한 스크롤 — IntersectionObserver로 fetchNextPage 트리거
+  useEffect(() => {
+    const el = bottomRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        if (activeTab === "authored" && hasNextAuthoredPage && !isFetchingNextAuthoredPage) {
+          fetchNextAuthoredPage();
+        } else if (activeTab === "liked" && hasNextLikedPage && !isFetchingNextLikedPage) {
+          fetchNextLikedPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [
+    activeTab,
+    hasNextAuthoredPage,
+    isFetchingNextAuthoredPage,
+    fetchNextAuthoredPage,
+    hasNextLikedPage,
+    isFetchingNextLikedPage,
+    fetchNextLikedPage,
+  ]);
 
   const profileMutation = useMutation({
     mutationFn: async () => {
@@ -138,12 +186,13 @@ export default function MyPage() {
       queryClient.setQueryData<UserProfile>(["myInfo"], (old) =>
         old ? { ...old, name: nameInput, bio: bioInput } : old
       );
-      updateName(nameInput);
+      updateName(nameInput); // AuthContext 낙관적 업데이트
       return { previousUser };
     },
     onError: (_err, _vars, context) => {
       if (context?.previousUser) {
         queryClient.setQueryData(["myInfo"], context.previousUser);
+        updateName(context.previousUser.name); // AuthContext도 함께 롤백
       }
       alert("프로필 수정에 실패했습니다.");
     },
@@ -199,20 +248,37 @@ export default function MyPage() {
 
       {/* 프로필 카드 */}
       <div className="mb-6 flex items-center gap-8 rounded-xl bg-[#111] p-8">
-        <div
-          className={`relative h-32 w-32 shrink-0 overflow-hidden rounded-full ${isEditing ? "cursor-pointer" : ""}`}
-          onClick={() => isEditing && fileInputRef.current?.click()}
-        >
-          {displayAvatar ? (
-            <img src={displayAvatar} alt="프로필" className="h-full w-full object-cover" />
-          ) : (
-            <DefaultAvatar />
-          )}
-          {isEditing && (
+        {/* 아바타 — 수정 모드에서 label로 키보드 접근 가능 */}
+        {isEditing ? (
+          <label
+            htmlFor="avatar-file-input"
+            className="relative h-32 w-32 shrink-0 cursor-pointer overflow-hidden rounded-full"
+            aria-label="프로필 이미지 변경"
+          >
+            {displayAvatar ? (
+              <img src={displayAvatar} alt="프로필" className="h-full w-full object-cover" />
+            ) : (
+              <DefaultAvatar />
+            )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">변경</div>
-          )}
-        </div>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          </label>
+        ) : (
+          <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full">
+            {displayAvatar ? (
+              <img src={displayAvatar} alt="프로필" className="h-full w-full object-cover" />
+            ) : (
+              <DefaultAvatar />
+            )}
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          id="avatar-file-input"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
 
         <div className="flex flex-1 flex-col gap-3">
           {isEditing ? (
@@ -343,6 +409,14 @@ export default function MyPage() {
             ))}
           </div>
         )
+      )}
+
+      {/* 무한 스크롤 트리거 sentinel */}
+      <div ref={bottomRef} className="h-4" />
+      {(isFetchingNextAuthoredPage || isFetchingNextLikedPage) && (
+        <div className="flex justify-center py-4">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
+        </div>
       )}
 
       {editingLp && (

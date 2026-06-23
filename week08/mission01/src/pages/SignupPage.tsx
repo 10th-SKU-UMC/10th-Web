@@ -17,8 +17,9 @@ export default function SignupPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  
+
 
   const { values, errors, touched, getInputProps, handleBlur } =
     useForm<SignupFormValues>({
@@ -70,6 +71,8 @@ export default function SignupPage() {
     (step === 3 && isStep3Valid);
 
   const handleNext = async () => {
+    if (isSubmitting) return; // 중복 제출 방지
+
     if (step === 1) {
       handleBlur("email");
       if (!isStep1Valid) return;
@@ -89,6 +92,7 @@ export default function SignupPage() {
     if (!isStep3Valid) return;
 
     try {
+      setIsSubmitting(true);
       await postSignup({
         email: values.email,
         password: values.password,
@@ -103,6 +107,8 @@ export default function SignupPage() {
           ? error.message
           : "회원가입 중 오류가 발생했습니다. 다시 시도해주세요.";
       alert(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -254,14 +260,14 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              disabled={!isCurrentStepValid}
+              disabled={!isCurrentStepValid || isSubmitting}
               className={`h-[48px] w-full rounded-md text-base font-semibold transition ${
-                isCurrentStepValid
+                isCurrentStepValid && !isSubmitting
                   ? "bg-pink-500 text-white hover:bg-pink-600"
                   : "cursor-not-allowed bg-[#1f1f1f] text-gray-500"
               }`}
             >
-              {step === 3 ? "회원가입 완료" : "다음"}
+              {isSubmitting ? "처리 중..." : step === 3 ? "회원가입 완료" : "다음"}
             </button>
           </div>
         </div>

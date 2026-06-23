@@ -8,7 +8,7 @@ import CommentSection from "../components/CommentSection";
 import LpEditModal from "../components/LpEditModal";
 
 const formatDate = (dateStr: string) => {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const diff = Math.max(0, Date.now() - new Date(dateStr).getTime());
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor(diff / 3600000);
   if (hours < 24) return `${hours}시간 전`;
@@ -45,7 +45,7 @@ export default function LpDetailPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["lp", id],
     queryFn: () => getLpDetail(id),
-    enabled: !isNaN(id),
+    enabled: !!accessToken && !isNaN(id), // 비로그인 시 리다이렉트 전 401 호출 차단
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
   });
